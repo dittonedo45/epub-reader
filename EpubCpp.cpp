@@ -4,6 +4,9 @@
 extern "C" {
 #include <archive.h>
 #include <archive_entry.h>
+#include <libxml/list.h>
+#include <libxml/parser.h>
+#include <libxml/HTMLparser.h>
 };
 
 using namespace std;
@@ -73,6 +76,62 @@ struct epub_handle {
 	struct archive_entry *ent;
 };
 
+char *findd (xmlNodePtr p, char *name)
+{
+		while (p)
+		{
+				if (!strcmp ((char*)p->name, name))
+						return(char*) p->children->content;
+				p=p->next;
+		}
+		return (0);
+}
+
+void ShoP (xmlNodePtr p, map<string, string>& mm)
+{
+		if (!p) return;
+
+		p = p->children;
+		regex htmlrx("^.*\\.x?html$");
+
+		while (p)
+		{
+				if (p->name && !strcmp ("metadata",(char*) p->name))
+				{
+				xmlNodePtr xp = p->children;
+				}else
+				if (p->name && !strcmp ("manifest", (char*)p->name))
+				{
+					xmlNodePtr xp = p->children;
+
+					while (xp)
+					{
+							char *txt=findd ((xmlNodePtr)xp->properties, "href");
+							xp=xp->next;
+							if (!txt)
+								continue;
+							do {
+								if (!regex_match (string (txt),
+											htmlrx))
+									continue;
+								for (auto& cont_: mm)
+								{
+									const char *xnn=
+									cont_.first.c_str ();
+									if (strlen (txt)>=strlen (xnn))
+										continue;
+									if (string (&xnn[strlen(xnn)-strlen(txt)])
+									==string (txt))
+									{
+										cout << cont_.first << endl;
+									}
+								}
+							} while (0);
+					}
+				}
+				p=p->next;
+		}
+}
 int main (int argsc, char **args)
 {
 	epub_handle* ep=new epub_handle(string (args[1]));
@@ -80,9 +139,7 @@ int main (int argsc, char **args)
 	while (1)
 	{
 		try {
-			struct archive_entry *ent=ep->next (cont_b);
-
-			cout << archive_entry_pathname (ent) << endl;
+			ep->next (cont_b);
 		} catch (int& er)
 		{
 			break;
@@ -93,8 +150,15 @@ int main (int argsc, char **args)
 	{
 		if (!regex_match (cont_.first, opf))
 			continue;
-		cout << cont_.first << endl;
-		cout << cont_.second << endl;
+		xmlDocPtr dp= xmlReadMemory (cont_.second.c_str(),
+				cont_.second.length(),
+				"utf-8", 0, 0);
+
+		do {
+				if (!dp) break;
+				ShoP (dp->children, cont_b);
+				xmlFreeDoc (dp);
+		} while (0);
 		break;
 	}
 	return( 0 );
