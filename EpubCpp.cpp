@@ -92,7 +92,7 @@ void ShoP (xmlNodePtr p, map<string, string>& mm)
 		if (!p) return;
 
 		p = p->children;
-		regex htmlrx("^.*\\.x?html$");
+		regex htmlrx("^.*.x?html?$");
 
 		while (p)
 		{
@@ -116,14 +116,15 @@ void ShoP (xmlNodePtr p, map<string, string>& mm)
 									continue;
 								for (auto& cont_: mm)
 								{
-									const char *xnn=
-									cont_.first.c_str ();
-									if (strlen (txt)>=strlen (xnn))
+									const char *xnn=cont_.first.c_str ();
+									if (strlen (txt)>strlen (xnn))
+									{
 										continue;
+									}
 									if (string (&xnn[strlen(xnn)-strlen(txt)])
 									==string (txt))
 									{
-										cout << cont_.first << endl;
+										cout << cont_.second << endl;
 									}
 								}
 							} while (0);
@@ -145,7 +146,7 @@ int main (int argsc, char **args)
 			break;
 		}
 	}
-	regex opf("^.*\\.o..$");
+	regex opf("^.*opf.*$");
 	for (auto& cont_: cont_b)
 	{
 		if (!regex_match (cont_.first, opf))
